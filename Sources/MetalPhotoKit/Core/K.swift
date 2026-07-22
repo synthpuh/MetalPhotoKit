@@ -21,4 +21,16 @@ enum K {
     enum FilterChain {
         static let commandBufferLabelPrefix = "com.metalphotokit.filter-chain"
     }
+
+    enum ExposureContrast {
+        static let functionName = "exposureContrast"
+        static let encoderLabel = "com.metalphotokit.exposure-contrast"
+        static let exposureRange: ClosedRange<Float> = -2...2
+        static let contrastRange: ClosedRange<Float> = 0...2
+    }
+
+    enum DebugPreview {
+        static let sampleImageName = "SampleImage"
+        static let sampleImageExtension = "png"
+    }
 }

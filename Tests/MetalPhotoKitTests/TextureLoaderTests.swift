@@ -36,7 +36,11 @@ struct TextureLoaderTests {
     }
     #endif
 
-    static func makeCGImage(width: Int, height: Int) -> CGImage? {
+    static func makeCGImage(
+        width: Int,
+        height: Int,
+        color: (red: CGFloat, green: CGFloat, blue: CGFloat) = (0.5, 0.25, 0.75)
+    ) -> CGImage? {
         guard let context = CGContext(
             data: nil,
             width: width,
@@ -47,7 +51,7 @@ struct TextureLoaderTests {
             bitmapInfo: K.Texture.bitmapInfo.rawValue
         ) else { return nil }
 
-        context.setFillColor(red: 0.5, green: 0.25, blue: 0.75, alpha: 1)
+        context.setFillColor(red: color.red, green: color.green, blue: color.blue, alpha: 1)
         context.fill(CGRect(x: 0, y: 0, width: width, height: height))
         return context.makeImage()
     }

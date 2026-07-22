@@ -13,6 +13,14 @@ public enum MetalPhotoKitError: Error, LocalizedError, Equatable {
 
     case commandBufferCreationFailed
 
+    case commandEncoderCreationFailed
+
+    case shaderLibraryLoadFailed(String)
+
+    case shaderFunctionNotFound(String)
+
+    case computePipelineStateCreationFailed(String)
+
     public var errorDescription: String? {
         switch self {
         case .deviceUnavailable:
@@ -27,6 +35,14 @@ public enum MetalPhotoKitError: Error, LocalizedError, Equatable {
             return "The image has zero width or height, or no backing CGImage."
         case .commandBufferCreationFailed:
             return "The command queue failed to create a command buffer."
+        case .commandEncoderCreationFailed:
+            return "The command buffer failed to create a compute command encoder."
+        case .shaderLibraryLoadFailed(let reason):
+            return "Failed to load the compiled shader library: \(reason)"
+        case .shaderFunctionNotFound(let name):
+            return "No shader function named \"\(name)\" was found in the shader library."
+        case .computePipelineStateCreationFailed(let reason):
+            return "Failed to create a compute pipeline state: \(reason)"
         }
     }
 }
