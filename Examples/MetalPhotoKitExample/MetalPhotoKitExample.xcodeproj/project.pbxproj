@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		77FD44713011434700F4F713 /* MetalPhotoKit in Frameworks */ = {isa = PBXBuildFile; productRef = 77FD44703011434700F4F713 /* MetalPhotoKit */; };
+		778CAF1C302A325500719B36 /* MetalPhotoKit in Frameworks */ = {isa = PBXBuildFile; productRef = 778CAF1B302A325500719B36 /* MetalPhotoKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -56,7 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				77FD44713011434700F4F713 /* MetalPhotoKit in Frameworks */,
+				778CAF1C302A325500719B36 /* MetalPhotoKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -117,7 +117,7 @@
 			);
 			name = MetalPhotoKitExample;
 			packageProductDependencies = (
-				77FD44703011434700F4F713 /* MetalPhotoKit */,
+				778CAF1B302A325500719B36 /* MetalPhotoKit */,
 			);
 			productName = MetalPhotoKitExample;
 			productReference = 77FD4439301142BC00F4F713 /* MetalPhotoKitExample.app */;
@@ -202,7 +202,7 @@
 			mainGroup = 77FD4430301142BC00F4F713;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				77FD446F3011434700F4F713 /* XCLocalSwiftPackageReference "../../../MetalPhotoKit" */,
+				778CAF1A302A325500719B36 /* XCLocalSwiftPackageReference "../../../MetalPhotoKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 77FD443A301142BC00F4F713 /* Products */;
@@ -589,14 +589,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		77FD446F3011434700F4F713 /* XCLocalSwiftPackageReference "../../../MetalPhotoKit" */ = {
+		778CAF1A302A325500719B36 /* XCLocalSwiftPackageReference "../../../MetalPhotoKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../../../MetalPhotoKit;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		77FD44703011434700F4F713 /* MetalPhotoKit */ = {
+		778CAF1B302A325500719B36 /* MetalPhotoKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = MetalPhotoKit;
 		};

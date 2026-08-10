@@ -31,5 +31,14 @@ enum DemoFilterCatalog {
                 ExposureContrastFilter(exposure: values[0], contrast: values[1])
             }
         ),
+        DemoFilterDescriptor(
+            title: "Gaussian Blur",
+            parameters: [
+                DemoFilterParameter(name: "Radius", range: 0...64, defaultValue: 0),
+            ],
+            makeFilter: { values in
+                GaussianBlurFilter(radius: Int(values[0].rounded()))
+            }
+        ),
     ]
 }

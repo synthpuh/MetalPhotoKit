@@ -29,6 +29,12 @@ enum K {
         static let contrastRange: ClosedRange<Float> = 0...2
     }
 
+    enum GaussianBlur {
+        static let functionName = "gaussianBlur"
+        static let encoderLabel = "com.metalphotokit.gaussian-blur"
+        static let radiusRange: ClosedRange<Int> = 0...64
+    }
+
     enum DebugPreview {
         static let sampleImageName = "SampleImage"
         static let sampleImageExtension = "png"

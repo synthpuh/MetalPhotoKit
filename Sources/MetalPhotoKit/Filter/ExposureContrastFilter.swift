@@ -17,18 +17,11 @@ public struct ExposureContrastFilter: Filter {
     public func apply(to input: any MTLTexture, commandBuffer: any MTLCommandBuffer, context: MetalContext) throws -> any MTLTexture {
         let pipelineState = try context.computePipelineState(function: K.ExposureContrast.functionName)
 
-        let descriptor = MTLTextureDescriptor.texture2DDescriptor(
-            pixelFormat: input.pixelFormat,
+        let output = try context.checkoutTexture(
             width: input.width,
             height: input.height,
-            mipmapped: false
+            pixelFormat: input.pixelFormat
         )
-        descriptor.usage = [.shaderRead, .shaderWrite]
-
-        guard let output = context.device.makeTexture(descriptor: descriptor) else {
-            throw MetalPhotoKitError.textureCreationFailed
-        }
-        output.label = "\(K.Texture.textureLabelPrefix).exposure-contrast"
 
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw MetalPhotoKitError.commandEncoderCreationFailed
