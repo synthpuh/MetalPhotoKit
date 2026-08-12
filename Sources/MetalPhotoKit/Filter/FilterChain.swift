@@ -9,6 +9,17 @@ public struct FilterChain {
         self.filters = filters
     }
 
+    /// Runs `filters` in sequence, threading each filter's output into the
+    /// next, and returns the final texture.
+    ///
+    /// The returned texture is usually checked out from `context`'s texture
+    /// pool; ownership passes to the caller, who must call
+    /// ``MetalContext/returnTexture(_:)`` once done with it (e.g. after
+    /// reading it back into a `CGImage`) or it stays checked out forever.
+    /// Exception: if every filter is a no-op for its current parameters (or
+    /// `filters` is empty), the result is `source` itself, unchanged — check
+    /// the returned texture isn't `source` before returning it to the pool,
+    /// or you'll hand the caller's own texture to the next unrelated checkout.
     public func run(on source: any MTLTexture) throws -> any MTLTexture {
         guard !filters.isEmpty else { return source }
 

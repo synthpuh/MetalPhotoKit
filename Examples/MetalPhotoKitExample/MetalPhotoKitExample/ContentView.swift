@@ -86,6 +86,13 @@ private struct FilterDemoView: View {
 
     private var parameterSliders: some View {
         VStack(spacing: 12) {
+            HStack {
+                Text(viewModel.selectedFilter.title)
+                    .font(.headline)
+                Spacer()
+                Button("Reset", action: viewModel.resetParameters)
+                    .font(.caption)
+            }
             ForEach(Array(viewModel.selectedFilter.parameters.enumerated()), id: \.offset) { index, parameter in
                 VStack(alignment: .leading, spacing: 4) {
                     Text("\(parameter.name): \(viewModel.parameterValues[index], specifier: "%.2f")")
