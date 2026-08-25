@@ -5,6 +5,7 @@
 //  Created by Olga on 22.07.2026.
 //
 
+import MetalPhotoKit
 import PhotosUI
 import SwiftUI
 
@@ -37,7 +38,8 @@ private struct FilterDemoView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
-                imagePreview
+                preview
+                renderModePicker
                 filterPicker
                 parameterSliders
                 photosPickerButton
@@ -47,11 +49,36 @@ private struct FilterDemoView: View {
         }
     }
 
-    private var imagePreview: some View {
+    private var preview: some View {
+        Group {
+            switch viewModel.renderMode {
+            case .readback:
+                readbackPreview
+            case .live:
+                livePreview
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(alignment: .bottom) {
+            if let errorMessage = viewModel.errorMessage {
+                Text(errorMessage)
+                    .font(.caption)
+                    .foregroundStyle(.white)
+                    .padding(8)
+                    .background(.red, in: RoundedRectangle(cornerRadius: 8))
+                    .padding(8)
+            }
+        }
+    }
+
+    /// `FilterChain.run` into a CPU-readable texture, read back into a
+    /// `UIImage`, and displayed by a plain SwiftUI `Image` — supports the
+    /// press-and-hold compare gesture since it's just swapping which
+    /// already-decoded image is on screen.
+    private var readbackPreview: some View {
         Image(uiImage: isShowingOriginal ? viewModel.sourceImage : (viewModel.filteredImage ?? viewModel.sourceImage))
             .resizable()
             .scaledToFit()
-            .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(alignment: .topTrailing) {
                 if viewModel.isProcessing {
                     ProgressView()
@@ -63,16 +90,27 @@ private struct FilterDemoView: View {
                     .onChanged { _ in isShowingOriginal = true }
                     .onEnded { _ in isShowingOriginal = false }
             )
-            .overlay(alignment: .bottom) {
-                if let errorMessage = viewModel.errorMessage {
-                    Text(errorMessage)
-                        .font(.caption)
-                        .foregroundStyle(.white)
-                        .padding(8)
-                        .background(.red, in: RoundedRectangle(cornerRadius: 8))
-                        .padding(8)
-                }
+    }
+
+    /// `FilterChainMetalView`, an `MTKView` the chain renders straight into
+    /// — no `filteredImage`, no readback, no compare gesture.
+    private var livePreview: some View {
+        FilterChainMetalView(
+            context: viewModel.context,
+            sourceTexture: viewModel.sourceTexture,
+            filters: viewModel.currentFilters,
+            onError: viewModel.reportLiveRenderError
+        )
+        .aspectRatio(viewModel.sourceImage.size, contentMode: .fit)
+    }
+
+    private var renderModePicker: some View {
+        Picker("Render Mode", selection: $viewModel.renderMode) {
+            ForEach(RenderMode.allCases) { mode in
+                Text(mode.rawValue).tag(mode)
             }
+        }
+        .pickerStyle(.segmented)
     }
 
     private var filterPicker: some View {

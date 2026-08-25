@@ -47,4 +47,9 @@ enum K {
         static let sampleImageName = "SampleImage"
         static let sampleImageExtension = "png"
     }
+
+    enum LiveFilterView {
+        static let commandBufferLabel = "com.metalphotokit.live-preview"
+        static let preferredFramesPerSecond = 60
+    }
 }

@@ -3,6 +3,18 @@ import MetalPhotoKit
 import Observation
 import UIKit
 
+/// Which of the two render paths the demo is currently showing, so both can
+/// be compared against the same photo and parameters.
+enum RenderMode: String, CaseIterable, Identifiable {
+    /// `FilterChain.run` into a CPU-readable texture, read back into a
+    /// `CGImage`/`UIImage`, and displayed by a SwiftUI `Image`.
+    case readback = "Readback"
+    /// `FilterChainMetalView`, an `MTKView` the chain renders into directly.
+    case live = "Live"
+
+    var id: Self { self }
+}
+
 /// Drives the demo screen: owns the GPU context, converts the selected
 /// photo to a texture once, and re-runs the full filter chain whenever any
 /// parameter or the source photo changes.
@@ -15,12 +27,26 @@ import UIKit
 /// output, so parameter edits never compound. Defaults are identity for
 /// every filter, and each filter has a no-op fast path at its default, so
 /// an untouched photo passes through unchanged and costs nothing extra.
+///
+/// Two render paths share that same chain: ``RenderMode/readback`` drives
+/// `filteredImage` through a CPU texture readback, while
+/// ``RenderMode/live`` hands `context`, `sourceTexture`, and
+/// ``currentFilters`` to a `FilterChainMetalView` that renders straight to
+/// a drawable. Only the active mode's path actually does work — switching
+/// to `.live` stops scheduling readbacks nobody is looking at.
 @MainActor
 @Observable
 final class FilterDemoViewModel {
     private(set) var filteredImage: UIImage?
     private(set) var isProcessing = false
     private(set) var errorMessage: String?
+
+    var renderMode: RenderMode = .readback {
+        didSet {
+            guard renderMode != oldValue, renderMode == .readback else { return }
+            scheduleReprocess()
+        }
+    }
 
     var sourceImage: UIImage {
         didSet { loadSourceTexture() }
@@ -44,11 +70,20 @@ final class FilterDemoViewModel {
         filterCatalog.first { $0.id == selectedFilterID } ?? filterCatalog[0]
     }
 
-    let filterCatalog: [DemoFilterDescriptor]
+    /// The full chain, in fixed order, built from every filter's current
+    /// persistent parameters — what both render paths run.
+    var currentFilters: [any Filter] {
+        filterCatalog.map { descriptor in
+            descriptor.makeFilter(parametersByFilterID[descriptor.id] ?? descriptor.parameters.map(\.defaultValue))
+        }
+    }
 
-    private let context: MetalContext
+    let filterCatalog: [DemoFilterDescriptor]
+    let context: MetalContext
+
+    private(set) var sourceTexture: (any MTLTexture)?
+
     private let textureLoader: TextureLoader
-    private var sourceTexture: (any MTLTexture)?
     private var reprocessTask: Task<Void, Never>?
     private var parametersByFilterID: [DemoFilterDescriptor.ID: [Float]]
 
@@ -107,13 +142,20 @@ final class FilterDemoViewModel {
         }
     }
 
+    /// Surfaces a `FilterChainMetalView` draw failure through the same
+    /// error banner the readback path uses.
+    func reportLiveRenderError(_ error: Error) {
+        errorMessage = error.localizedDescription
+    }
+
     private func scheduleReprocess() {
         reprocessTask?.cancel()
-        guard let sourceTexture else { return }
+        // The live path renders straight from `sourceTexture` and
+        // `currentFilters` on every SwiftUI update; readback work here would
+        // just burn CPU on an image nothing is displaying.
+        guard renderMode == .readback, let sourceTexture else { return }
 
-        let filters = filterCatalog.map { descriptor in
-            descriptor.makeFilter(parametersByFilterID[descriptor.id] ?? descriptor.parameters.map(\.defaultValue))
-        }
+        let filters = currentFilters
         let context = context
         let loader = textureLoader
 
