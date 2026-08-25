@@ -35,6 +35,14 @@ enum K {
         static let radiusRange: ClosedRange<Int> = 0...64
     }
 
+    enum LUT {
+        static let functionName = "lut3D"
+        static let encoderLabel = "com.metalphotokit.lut"
+        static let intensityRange: ClosedRange<Float> = 0...1
+        static let neutralLUTName = "Neutral"
+        static let cubeFileExtension = "cube"
+    }
+
     enum DebugPreview {
         static let sampleImageName = "SampleImage"
         static let sampleImageExtension = "png"

@@ -21,6 +21,8 @@ public enum MetalPhotoKitError: Error, LocalizedError, Equatable {
 
     case computePipelineStateCreationFailed(String)
 
+    case invalidLUTFile(String)
+
     public var errorDescription: String? {
         switch self {
         case .deviceUnavailable:
@@ -43,6 +45,8 @@ public enum MetalPhotoKitError: Error, LocalizedError, Equatable {
             return "No shader function named \"\(name)\" was found in the shader library."
         case .computePipelineStateCreationFailed(let reason):
             return "Failed to create a compute pipeline state: \(reason)"
+        case .invalidLUTFile(let reason):
+            return "Failed to parse the .cube LUT file: \(reason)"
         }
     }
 }

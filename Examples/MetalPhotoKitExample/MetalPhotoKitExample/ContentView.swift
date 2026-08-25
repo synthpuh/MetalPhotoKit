@@ -77,7 +77,7 @@ private struct FilterDemoView: View {
 
     private var filterPicker: some View {
         Picker("Filter", selection: $viewModel.selectedFilterID) {
-            ForEach(DemoFilterCatalog.all) { descriptor in
+            ForEach(viewModel.filterCatalog) { descriptor in
                 Text(descriptor.title).tag(descriptor.id)
             }
         }
@@ -92,14 +92,38 @@ private struct FilterDemoView: View {
                 Spacer()
                 Button("Reset", action: viewModel.resetParameters)
                     .font(.caption)
+                Button("Reset All", action: viewModel.resetAll)
+                    .font(.caption)
             }
             ForEach(Array(viewModel.selectedFilter.parameters.enumerated()), id: \.offset) { index, parameter in
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("\(parameter.name): \(viewModel.parameterValues[index], specifier: "%.2f")")
-                        .font(.caption)
-                        .monospacedDigit()
-                    Slider(value: $viewModel.parameterValues[index], in: parameter.range)
+                parameterControl(for: parameter, index: index)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func parameterControl(for parameter: DemoFilterParameter, index: Int) -> some View {
+        switch parameter.kind {
+        case .continuous(let range):
+            VStack(alignment: .leading, spacing: 4) {
+                Text("\(parameter.name): \(viewModel.parameterValues[index], specifier: "%.2f")")
+                    .font(.caption)
+                    .monospacedDigit()
+                Slider(value: $viewModel.parameterValues[index], in: range)
+            }
+        case .choice(let options):
+            VStack(alignment: .leading, spacing: 4) {
+                Text(parameter.name)
+                    .font(.caption)
+                Picker(parameter.name, selection: Binding(
+                    get: { Int(viewModel.parameterValues[index].rounded()) },
+                    set: { viewModel.parameterValues[index] = Float($0) }
+                )) {
+                    ForEach(options.indices, id: \.self) { optionIndex in
+                        Text(options[optionIndex]).tag(optionIndex)
+                    }
                 }
+                .pickerStyle(.segmented)
             }
         }
     }

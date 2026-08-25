@@ -4,13 +4,17 @@ import Observation
 import UIKit
 
 /// Drives the demo screen: owns the GPU context, converts the selected
-/// photo to a texture once, and re-runs the selected filter whenever its
-/// parameters, the chosen filter, or the source photo change.
+/// photo to a texture once, and re-runs the full filter chain whenever any
+/// parameter or the source photo changes.
 ///
-/// Filtering is non-destructive: every re-run starts from the original
-/// ``sourceTexture``, never from a previous filter's output, so parameter
-/// edits never compound. Each filter keeps its own parameter values, so
-/// switching filters and back doesn't lose earlier tweaks.
+/// All three filters — exposure/contrast, blur, then LUT — are always in
+/// the chain, in that fixed order, each carrying its own persistent
+/// parameter state. The tab picker only selects which filter's sliders are
+/// visible; it never adds or removes anything from the chain. Every re-run
+/// starts from the original ``sourceTexture``, never from a previous run's
+/// output, so parameter edits never compound. Defaults are identity for
+/// every filter, and each filter has a no-op fast path at its default, so
+/// an untouched photo passes through unchanged and costs nothing extra.
 @MainActor
 @Observable
 final class FilterDemoViewModel {
@@ -24,7 +28,8 @@ final class FilterDemoViewModel {
 
     var selectedFilterID: DemoFilterDescriptor.ID {
         didSet {
-            parameterValues = parametersByFilterID[selectedFilterID] ?? selectedFilter.parameters.map(\.defaultValue)
+            parameterValues = parametersByFilterID[selectedFilterID]
+                ?? selectedFilter.parameters.map(\.defaultValue)
         }
     }
 
@@ -36,8 +41,10 @@ final class FilterDemoViewModel {
     }
 
     var selectedFilter: DemoFilterDescriptor {
-        DemoFilterCatalog.all.first { $0.id == selectedFilterID } ?? DemoFilterCatalog.all[0]
+        filterCatalog.first { $0.id == selectedFilterID } ?? filterCatalog[0]
     }
+
+    let filterCatalog: [DemoFilterDescriptor]
 
     private let context: MetalContext
     private let textureLoader: TextureLoader
@@ -50,14 +57,21 @@ final class FilterDemoViewModel {
 
     init?(sourceImage: UIImage) {
         guard let context = try? MetalContext() else { return nil }
+
+        let lutLoader = LUTLoader(context: context)
+        guard let lutTextures = try? DemoLUTGenerator.looks.map({ look in
+            try lutLoader.texture(fromCubeFileContents: DemoLUTGenerator.cubeFile(transform: look.transform))
+        }) else { return nil }
+
         self.context = context
         self.textureLoader = TextureLoader(context: context)
+        self.filterCatalog = DemoFilterCatalog.all(lutTextures: lutTextures)
         self.sourceImage = sourceImage
         self.parametersByFilterID = Dictionary(
-            uniqueKeysWithValues: DemoFilterCatalog.all.map { ($0.id, $0.parameters.map(\.defaultValue)) }
+            uniqueKeysWithValues: filterCatalog.map { ($0.id, $0.parameters.map(\.defaultValue)) }
         )
 
-        let descriptor = DemoFilterCatalog.all[0]
+        let descriptor = filterCatalog[0]
         self.selectedFilterID = descriptor.id
         self.parameterValues = descriptor.parameters.map(\.defaultValue)
 
@@ -68,6 +82,15 @@ final class FilterDemoViewModel {
     /// defaults, leaving every other filter's saved values untouched.
     func resetParameters() {
         parameterValues = selectedFilter.parameters.map(\.defaultValue)
+    }
+
+    /// Restores every filter in the chain to its defaults, not just the
+    /// currently selected one.
+    func resetAll() {
+        parametersByFilterID = Dictionary(
+            uniqueKeysWithValues: filterCatalog.map { ($0.id, $0.parameters.map(\.defaultValue)) }
+        )
+        parameterValues = parametersByFilterID[selectedFilterID] ?? selectedFilter.parameters.map(\.defaultValue)
     }
 
     private func loadSourceTexture() {
@@ -88,7 +111,9 @@ final class FilterDemoViewModel {
         reprocessTask?.cancel()
         guard let sourceTexture else { return }
 
-        let filter = selectedFilter.makeFilter(parameterValues)
+        let filters = filterCatalog.map { descriptor in
+            descriptor.makeFilter(parametersByFilterID[descriptor.id] ?? descriptor.parameters.map(\.defaultValue))
+        }
         let context = context
         let loader = textureLoader
 
@@ -103,12 +128,13 @@ final class FilterDemoViewModel {
             }
 
             do {
-                let chain = FilterChain(context: context, filters: [filter])
+                let chain = FilterChain(context: context, filters: filters)
                 let output = try await Task.detached(priority: .userInitiated) {
                     let resultTexture = try chain.run(on: sourceTexture)
-                    // A no-op filter (e.g. blur at radius 0) hands back `sourceTexture`
-                    // itself rather than a pooled texture — returning that to the pool
-                    // would let a later checkout overwrite our persistent source.
+                    // If every filter is at its no-op default (e.g. an untouched
+                    // photo), the chain hands back `sourceTexture` itself rather
+                    // than a pooled texture — returning that to the pool would let
+                    // a later checkout overwrite our persistent source.
                     defer {
                         if resultTexture !== sourceTexture {
                             context.returnTexture(resultTexture)

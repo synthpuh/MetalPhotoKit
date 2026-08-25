@@ -23,7 +23,8 @@ let package = Package(
             name: "MetalPhotoKit",
             exclude: ["Shaders"],
             resources: [
-                .copy("Resources/SampleImage.png")
+                .copy("Resources/SampleImage.png"),
+                .copy("Resources/Neutral.cube")
             ],
             plugins: ["MetalShaderCompilerPlugin"]
         ),

@@ -1,23 +1,28 @@
 import Metal
 
-/// Adjusts exposure (in stops) and contrast around mid-gray via the
-/// `exposureContrast` compute kernel.
-public struct ExposureContrastFilter: Filter {
-    /// Exposure adjustment in stops (EV), clamped to ``K/ExposureContrast/exposureRange``.
-    public let exposure: Float
+/// Grades an image through a 3D LUT (color lookup table), blending between
+/// the original and fully graded result via `intensity`.
+///
+/// Build `lutTexture` once with ``LUTLoader`` — from a `.cube` file or its
+/// bundled neutral table — and reuse it across filter instances; this filter
+/// only samples it, it never uploads or owns it.
+public struct LUTFilter: Filter {
+    /// The 3D lookup table to grade through, previously uploaded by ``LUTLoader``.
+    public let lutTexture: any MTLTexture
 
-    /// Contrast multiplier around mid-gray, clamped to ``K/ExposureContrast/contrastRange``.
-    public let contrast: Float
+    /// Blend between the original color (0) and the fully graded color (1),
+    /// clamped to ``K/LUT/intensityRange``.
+    public let intensity: Float
 
-    public init(exposure: Float, contrast: Float) {
-        self.exposure = exposure.clamped(to: K.ExposureContrast.exposureRange)
-        self.contrast = contrast.clamped(to: K.ExposureContrast.contrastRange)
+    public init(lutTexture: any MTLTexture, intensity: Float = 1) {
+        self.lutTexture = lutTexture
+        self.intensity = intensity.clamped(to: K.LUT.intensityRange)
     }
 
     public func apply(to input: any MTLTexture, commandBuffer: any MTLCommandBuffer, context: MetalContext) throws -> any MTLTexture {
-        guard exposure != 0 || contrast != 1 else { return input }
+        guard intensity > 0 else { return input }
 
-        let pipelineState = try context.computePipelineState(function: K.ExposureContrast.functionName)
+        let pipelineState = try context.computePipelineState(function: K.LUT.functionName)
 
         let output = try context.checkoutTexture(
             width: input.width,
@@ -28,13 +33,14 @@ public struct ExposureContrastFilter: Filter {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw MetalPhotoKitError.commandEncoderCreationFailed
         }
-        encoder.label = K.ExposureContrast.encoderLabel
+        encoder.label = K.LUT.encoderLabel
         encoder.setComputePipelineState(pipelineState)
         encoder.setTexture(input, index: 0)
         encoder.setTexture(output, index: 1)
+        encoder.setTexture(lutTexture, index: 2)
 
-        var params = ExposureContrastParams(exposure: exposure, contrast: contrast)
-        encoder.setBytes(&params, length: MemoryLayout<ExposureContrastParams>.stride, index: 0)
+        var params = LUTParams(intensity: intensity)
+        encoder.setBytes(&params, length: MemoryLayout<LUTParams>.stride, index: 0)
 
         let threadsPerThreadgroup = MTLSize(
             width: pipelineState.threadExecutionWidth,
@@ -53,10 +59,9 @@ public struct ExposureContrastFilter: Filter {
     }
 }
 
-/// Mirrors the Metal-side `ExposureContrastParams` struct layout exactly.
-private struct ExposureContrastParams {
-    var exposure: Float
-    var contrast: Float
+/// Mirrors the Metal-side `LUTParams` struct layout exactly.
+private struct LUTParams {
+    var intensity: Float
 }
 
 private extension Comparable {
