@@ -1,4 +1,4 @@
-// swift-tools-version: 6.3
+// swift-tools-version: 6.1
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -15,6 +15,14 @@ let package = Package(
             name: "MetalPhotoKit",
             targets: ["MetalPhotoKit"]
         ),
+        .executable(
+            name: "metalphotokit-benchmark",
+            targets: ["MetalPhotoKitBenchmark"]
+        ),
+        .library(
+            name: "BenchmarkCore",
+            targets: ["BenchmarkCore"]
+        ),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -27,6 +35,14 @@ let package = Package(
                 .copy("Resources/Neutral.cube")
             ],
             plugins: ["MetalShaderCompilerPlugin"]
+        ),
+        .target(
+            name: "BenchmarkCore",
+            dependencies: ["MetalPhotoKit"]
+        ),
+        .executableTarget(
+            name: "MetalPhotoKitBenchmark",
+            dependencies: ["BenchmarkCore"]
         ),
         .testTarget(
             name: "MetalPhotoKitTests",

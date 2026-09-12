@@ -6,7 +6,7 @@
 //
 
 import Testing
-@testable import MetalPhotoKitExample
+//@testable import MetalPhotoKitExample
 
 struct MetalPhotoKitExampleTests {
 

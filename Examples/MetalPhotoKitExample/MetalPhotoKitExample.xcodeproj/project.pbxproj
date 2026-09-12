@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		778CAF1C302A325500719B36 /* MetalPhotoKit in Frameworks */ = {isa = PBXBuildFile; productRef = 778CAF1B302A325500719B36 /* MetalPhotoKit */; };
+		C45B0E6193B8D21B26EAB187 /* BenchmarkCore in Frameworks */ = {isa = PBXBuildFile; productRef = A20D846DBEC572B8532AE710 /* BenchmarkCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,6 +65,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C45B0E6193B8D21B26EAB187 /* BenchmarkCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -141,6 +143,7 @@
 			);
 			name = MetalPhotoKitExampleTests;
 			packageProductDependencies = (
+				A20D846DBEC572B8532AE710 /* BenchmarkCore */,
 			);
 			productName = MetalPhotoKitExampleTests;
 			productReference = 77FD4446301142BE00F4F713 /* MetalPhotoKitExampleTests.xctest */;
@@ -599,6 +602,10 @@
 		778CAF1B302A325500719B36 /* MetalPhotoKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = MetalPhotoKit;
+		};
+		A20D846DBEC572B8532AE710 /* BenchmarkCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BenchmarkCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
