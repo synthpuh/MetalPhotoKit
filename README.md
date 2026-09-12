@@ -1,5 +1,7 @@
 # MetalPhotoKit
 
+[![CI](https://github.com/synthpuh/MetalPhotoKit/actions/workflows/ci.yml/badge.svg)](https://github.com/synthpuh/MetalPhotoKit/actions/workflows/ci.yml)
+
 GPU-accelerated photo processing built on Metal: a composable filter chain,
 explicit texture pooling, and two render paths — one for CPU readback
 (export, share, further processing), one for a live on-screen preview that
